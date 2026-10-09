@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6fa">
+  <meta name="description" content="A polished, projector-ready speech competition timer.">
+  <title>Speech &amp; Debate Competition Stopwatch</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      color-scheme: light;
+      --page: #f1f4f9;
+      --surface: #fff;
+      --surface-soft: #f8f9fc;
+      --ink: #15243a;
+      --muted: #64748b;
+      --line: #e6eaf1;
+      --blue: #275bd8;
+      --blue-strong: #204dbb;
+      --blue-soft: #edf2ff;
+      --school-accent: #204b7d;
+      --green: #16835d;
+      --green-soft: #e9f7f0;
+      --red: #d3444c;
+      --red-soft: #fff0f0;
+      --shadow: 0 18px 55px rgba(28, 45, 76, .08);
+      --round: 20px;
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #111720;
+      --surface: #1a2330;
+      --surface-soft: #202b3a;
+      --ink: #eff4fb;
+      --muted: #adbbce;
+      --line: #303c4c;
+      --blue: #83aaff;
+      --blue-strong: #a4c0ff;
+      --blue-soft: #26344b;
+      --school-accent: #a4c0ff;
+      --green: #62d9a2;
+      --green-soft: #1d3b32;
+      --red: #ff8589;
+      --red-soft: #442b32;
+      --shadow: 0 18px 55px rgba(0, 0, 0, .2);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% -25%, rgba(73, 113, 207, .09), transparent 58%),
+        var(--page);
+      color: var(--ink);
+      font-family: "DM Sans", "Segoe UI", sans-serif;
+      transition: background .25s ease, color .25s ease;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, a:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--blue) 70%, transparent);
+      outline-offset: 3px;
+    }
+    .app-shell { width: min(1440px, 100%); margin: 0 auto; padding: 24px 34px 44px; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 19px; min-width: 0; }
+    .logo-frame {
+      display: grid;
+      place-items: center;
+      width: 104px;
+      height: 104px;
+      flex: 0 0 104px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(28, 45, 76, .1);
+    }
+    .logo-frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .brand-copy { min-width: 0; }
+    .brand-kicker { margin: 0 0 7px; color: var(--blue); font-size: 12px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }
+    .brand h1 {
+      margin: 0;
+      font-family: Manrope, "DM Sans", sans-serif;
+      font-size: clamp(21px, 2vw, 28px);
+      font-weight: 800;
+      letter-spacing: -.025em;
+      line-height: 1.2;
+    }
+    .school-nameplate {
+      margin: 5px 0 0;
+      color: var(--school-accent);
+      font-family: Manrope, "DM Sans", sans-serif;
+      font-size: clamp(17px, 1.55vw, 21px);
+      font-weight: 800;
+      letter-spacing: -.015em;
+      line-height: 1.3;
+    }
+    .brand-quote { margin: 9px 0 0; color: var(--muted); font-size: 17px; font-weight: 500; line-height: 1.45; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .icon-button, .utility-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .2s ease;
+    }
+    .icon-button { width: 44px; padding: 0; }
+    .icon-button:hover, .utility-button:hover { border-color: var(--blue); transform: translateY(-1px); }
+    .icon-button svg, .utility-button svg { width: 17px; height: 17px; }
+    .main-grid { display: grid; grid-template-columns: minmax(0, 1fr) 310px; align-items: start; gap: 20px; }
+    .timer-card, .side-card, .history-card {
+      border: 1px solid var(--line);
+      border-radius: var(--round);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .timer-card { position: relative; overflow: hidden; padding: clamp(24px, 4vw, 48px); }
+    .timer-card::before {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--blue), #9db9ff 55%, transparent);
+      content: "";
+      transition: background .3s ease;
+    }
+    .timer-card.is-running { background: linear-gradient(145deg, var(--surface), var(--green-soft)); }
+    .timer-card.is-running::before { background: linear-gradient(90deg, #18a66d, #7bd7a8); }
+    .timer-card.is-complete { background: linear-gradient(145deg, var(--surface), var(--green-soft)); }
+    .timer-card.is-complete::before { background: linear-gradient(90deg, #18a66d, #7bd7a8); }
+    .timer-card.is-finished { background: linear-gradient(145deg, var(--surface), var(--red-soft)); }
+    .timer-card.is-finished::before { background: linear-gradient(90deg, #d43d48, #f49494); }
+    .timer-card.is-paused::before { background: linear-gradient(90deg, #d99a30, #f1cf81); }
+    .timer-topline { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+    .eyebrow { margin: 0; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .13em;
+    }
+    .status-chip::before { width: 7px; height: 7px; border-radius: 50%; background: #9ca9b8; content: ""; }
+    .status-chip[data-state="running"] { color: var(--green); }
+    .status-chip[data-state="running"]::before { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 15%, transparent); }
+    .status-chip[data-state="complete"] { color: var(--green); }
+    .status-chip[data-state="complete"]::before { background: var(--green); }
+    .status-chip[data-state="paused"] { color: #bd841b; }
+    .status-chip[data-state="paused"]::before { background: #d99a30; }
+    .status-chip[data-state="finished"] { color: var(--red); }
+    .status-chip[data-state="finished"]::before { background: var(--red); }
+    .status-chip[data-state="countdown"] { color: var(--blue); }
+    .status-chip[data-state="countdown"]::before { background: var(--blue); }
+
+    .speaker-display { margin-top: clamp(24px, 4vw, 43px); text-align: center; }
+    .speaker-label { margin: 0 0 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    .speaker-name {
+      overflow: hidden;
+      max-width: 100%;
+      margin: 0;
+      font-family: Manrope, "DM Sans", sans-serif;
+      font-size: clamp(24px, 4vw, 42px);
+      font-weight: 800;
+      letter-spacing: -.04em;
+      line-height: 1.14;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .school-display { margin: 6px 0 0; color: var(--muted); font-size: 13px; font-weight: 500; }
+    .timer-wrap { position: relative; display: grid; place-items: center; margin: 17px auto 0; }
+    .timer-ring {
+      display: grid;
+      place-items: center;
+      width: min(100%, 590px);
+      aspect-ratio: 2.3 / 1;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: color-mix(in srgb, var(--surface) 82%, transparent);
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .is-running .timer-ring { border-color: color-mix(in srgb, var(--green) 28%, var(--line)); box-shadow: inset 0 0 38px color-mix(in srgb, var(--green) 6%, transparent); }
+    .is-finished .timer-ring { border-color: color-mix(in srgb, var(--red) 40%, var(--line)); box-shadow: inset 0 0 38px color-mix(in srgb, var(--red) 9%, transparent); }
+    .is-complete .timer-ring { border-color: color-mix(in srgb, var(--green) 28%, var(--line)); box-shadow: inset 0 0 38px color-mix(in srgb, var(--green) 6%, transparent); }
+    .timer-time {
+      margin: 0;
+      font-family: "DM Mono", "Courier New", monospace;
+      font-size: clamp(76px, 13vw, 150px);
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.08em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .timer-time .colon { display: inline-block; padding: 0 .055em; opacity: .72; }
+    .is-finished .timer-time { color: var(--red); }
+    .is-running .timer-time { color: var(--green); }
+    .is-complete .timer-time { color: var(--green); }
+    .countdown-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      border-radius: 26px;
+      background: color-mix(in srgb, var(--surface) 80%, transparent);
+      backdrop-filter: blur(3px);
+    }
+    .countdown-overlay.visible { display: grid; }
+    .countdown-number {
+      color: var(--blue);
+      font-family: Manrope, sans-serif;
+      font-size: clamp(86px, 15vw, 168px);
+      font-weight: 800;
+      line-height: 1;
+      animation: count-pop .8s ease both;
+    }
+    .countdown-number.go { color: var(--green); font-size: clamp(66px, 11vw, 118px); letter-spacing: .04em; }
+    @keyframes count-pop { 0% { opacity: 0; transform: scale(.7); } 25% { opacity: 1; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+    .limit-caption { margin: 15px 0 0; color: var(--muted); font-size: 12px; font-weight: 600; text-align: center; }
+    .limit-caption strong { color: var(--ink); font-weight: 700; }
+
+    .progress-track { height: 5px; overflow: hidden; margin: 23px 0 0; border-radius: 5px; background: var(--surface-soft); }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--blue); transition: width .15s linear, background .2s ease; }
+    .is-running .progress-fill { background: var(--green); }
+    .is-complete .progress-fill { background: var(--green); }
+    .is-finished .progress-fill { background: var(--red); }
+    .state-message { min-height: 19px; margin: 15px 0 0; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-align: center; }
+    .is-running .state-message { color: var(--green); }
+    .is-complete .state-message { color: var(--green); }
+    .is-finished .state-message { color: var(--red); }
+
+    .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .control-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-width: 126px;
+      min-height: 49px;
+      padding: 0 19px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .control-button:hover:not(:disabled) { transform: translateY(-2px); }
+    .control-button:disabled { opacity: .42; cursor: not-allowed; }
+    .control-button svg { width: 16px; height: 16px; }
+    .control-button.primary { border-color: var(--blue); background: var(--blue); color: #fff; box-shadow: 0 7px 18px color-mix(in srgb, var(--blue) 22%, transparent); }
+    [data-theme="dark"] .control-button.primary { color: #111720; }
+    .control-button.primary:hover:not(:disabled) { background: var(--blue-strong); }
+    .control-button.finish { color: var(--green); border-color: color-mix(in srgb, var(--green) 35%, var(--line)); }
+    .hotkey-hint { margin: 18px 0 0; color: var(--muted); font-size: 11px; text-align: center; }
+    kbd { padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-soft); font: 600 10px "DM Mono", monospace; }
+
+    .side-column { display: grid; gap: 16px; }
+    .side-card { padding: 20px; }
+    .card-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .card-heading h2 { margin: 0; font-family: Manrope, sans-serif; font-size: 15px; font-weight: 800; }
+    .card-heading .step { color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+    .field { display: grid; gap: 7px; margin-top: 14px; }
+    .field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .field input {
+      width: 100%;
+      min-height: 43px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-soft);
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .field input::placeholder { color: color-mix(in srgb, var(--muted) 72%, transparent); }
+    .limit-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field input[type="number"] { font-family: "DM Mono", monospace; font-size: 14px; }
+    .field-help { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .side-divider { height: 1px; margin: 19px 0; background: var(--line); }
+    .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .setting-copy strong { display: block; font-size: 13px; }
+    .setting-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .switch { position: relative; width: 43px; height: 24px; flex: 0 0 auto; }
+    .switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .switch-track { position: absolute; inset: 0; border-radius: 20px; background: #a8b2c0; cursor: pointer; transition: background .2s ease; }
+    .switch-track::before { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; content: ""; transition: transform .2s ease; }
+    .switch input:checked + .switch-track { background: var(--blue); }
+    .switch input:checked + .switch-track::before { transform: translateX(19px); }
+    .switch input:focus-visible + .switch-track { outline: 3px solid color-mix(in srgb, var(--blue) 55%, transparent); outline-offset: 3px; }
+    .theme-button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-soft); cursor: pointer; }
+    .theme-label { font-size: 13px; font-weight: 700; }
+    .theme-current { color: var(--muted); font-size: 11px; }
+    .theme-indicator { width: 30px; height: 18px; border: 1px solid var(--line); border-radius: 99px; background: linear-gradient(90deg, #fff 50%, #202b3a 50%); }
+    .history-card { margin-top: 20px; padding: 20px 22px; }
+    .history-card .card-heading { margin-bottom: 10px; }
+    .history-title-group { display: flex; align-items: center; gap: 9px; }
+    .history-count { display: grid; place-items: center; min-width: 22px; height: 22px; border-radius: 8px; background: var(--blue-soft); color: var(--blue); font-size: 10px; font-weight: 800; }
+    .text-button { border: 0; padding: 6px 8px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer; }
+    .text-button:hover:not(:disabled) { color: var(--red); }
+    .text-button:disabled { opacity: .45; cursor: not-allowed; }
+    .history-empty { padding: 20px 8px; color: var(--muted); font-size: 12px; text-align: center; }
+    .history-list { display: grid; }
+    .history-row {
+      display: grid;
+      grid-template-columns: minmax(145px, 1.4fr) minmax(95px, .75fr) minmax(100px, .75fr) minmax(140px, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 4px;
+      border-top: 1px solid var(--line);
+    }
+    .history-speaker { overflow: hidden; margin: 0; font-size: 13px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .history-school { overflow: hidden; margin: 3px 0 0; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .history-value { color: var(--muted); font-size: 12px; }
+    .history-value strong { display: block; margin-top: 3px; color: var(--ink); font-family: "DM Mono", monospace; font-size: 12px; font-weight: 500; }
+    .result-tag { justify-self: start; padding: 5px 8px; border-radius: 7px; background: var(--green-soft); color: var(--green); font-size: 10px; font-weight: 800; }
+    .result-tag.over { background: var(--red-soft); color: var(--red); }
+    .history-date { color: var(--muted); font-size: 10px; text-align: right; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+    .toast {
+      position: fixed;
+      z-index: 5;
+      right: 22px;
+      bottom: 22px;
+      max-width: min(380px, calc(100vw - 32px));
+      padding: 12px 16px;
+      transform: translateY(12px);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .toast.visible { transform: translateY(0); opacity: 1; }
+    .toast.error { border-color: color-mix(in srgb, var(--red) 40%, var(--line)); color: var(--red); }
+    dialog {
+      width: min(450px, calc(100% - 32px));
+      padding: 25px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+    }
+    dialog::backdrop { background: rgba(9, 17, 30, .5); backdrop-filter: blur(3px); }
+    dialog h2 { margin: 0 0 6px; font-family: Manrope, sans-serif; font-size: 20px; }
+    dialog p { color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .shortcut-list { display: grid; grid-template-columns: 1fr auto; gap: 12px 18px; padding: 15px 0; border-block: 1px solid var(--line); font-size: 12px; }
+    .shortcut-list kbd { min-width: 54px; text-align: center; }
+    .dialog-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+    .projector-mode .app-shell { width: min(1680px, 100%); padding: 20px 42px 34px; }
+    .projector-mode .main-grid { grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; }
+    .projector-mode .timer-card { padding: clamp(26px, 3vw, 50px); }
+    .projector-mode .timer-time { font-size: clamp(120px, 17vw, 250px); }
+    .projector-mode .timer-ring { width: min(100%, 900px); }
+    .projector-mode .speaker-name { font-size: clamp(36px, 5vw, 64px); }
+    .projector-mode .history-card { margin-top: 15px; }
+    .projector-mode .history-list .history-row:nth-child(n+4) { display: none; }
+    @media (min-width: 1500px) {
+      .app-shell { padding-top: 34px; }
+      .timer-time { font-size: clamp(150px, 11vw, 190px); }
+    }
+    @media (max-width: 980px) {
+      .app-shell { padding: 20px 22px 35px; }
+      .main-grid { grid-template-columns: minmax(0, 1fr) 280px; gap: 14px; }
+      .timer-card { padding: 26px 22px; }
+      .projector-mode .main-grid { grid-template-columns: 1fr; }
+      .projector-mode .side-column { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 720px) {
+      .app-shell { padding: 15px 14px 28px; }
+      .topbar { align-items: flex-start; margin-bottom: 17px; }
+      .brand { gap: 13px; }
+      .logo-frame { width: 76px; height: 76px; flex-basis: 76px; border-radius: 16px; }
+      .brand-kicker { margin-bottom: 5px; font-size: 11px; letter-spacing: .12em; }
+      .brand h1 { font-size: clamp(18px, 3vw, 23px); }
+      .school-nameplate { margin-top: 4px; font-size: clamp(16px, 2.8vw, 19px); }
+      .brand-quote { max-width: 410px; margin-top: 7px; font-size: 16px; }
+      .top-actions { gap: 6px; }
+      .icon-button { width: 38px; min-height: 38px; }
+      .utility-button { width: 38px; min-height: 38px; padding: 0; }
+      .utility-button .button-label { display: none; }
+      .main-grid { grid-template-columns: 1fr; }
+      .timer-card { padding: 25px 17px; }
+      .side-column { grid-template-columns: 1fr 1fr; align-items: start; }
+      .side-card { padding: 15px; }
+      .card-heading { margin-bottom: 11px; }
+      .card-heading h2 { font-size: 13px; }
+      .field { margin-top: 12px; }
+      .field label { font-size: 11px; }
+      .field input { min-height: 42px; padding: 0 9px; font-size: 13px; }
+      .side-divider { margin: 15px 0; }
+      .setting-copy strong { font-size: 12px; }
+      .setting-copy span { font-size: 10px; }
+      .theme-label { font-size: 11px; }
+      .theme-current { font-size: 10px; }
+      .theme-button { padding: 9px; }
+      .history-card { padding: 16px 13px; }
+      .history-row { grid-template-columns: minmax(95px, 1.2fr) minmax(70px, .7fr) minmax(85px, .8fr) auto; gap: 8px; }
+      .history-limit { display: none; }
+      .history-date { font-size: 9px; }
+      .projector-mode .app-shell { padding: 14px; }
+      .projector-mode .timer-time { font-size: clamp(110px, 21vw, 190px); }
+      .projector-mode .side-column { display: none; }
+    }
+    @media (max-width: 430px) {
+      .topbar { position: relative; display: block; padding-top: 49px; }
+      .brand { width: 100%; align-items: center; }
+      .brand { gap: 10px; }
+      .logo-frame { width: 72px; height: 72px; flex-basis: 72px; border-radius: 15px; }
+      .brand-copy { flex: 1; max-width: none; }
+      .brand-kicker { font-size: 10px; }
+      .brand h1 { font-size: 18px; }
+      .school-nameplate { margin-top: 5px; font-size: 16px; line-height: 1.3; }
+      .brand-quote { margin-top: 7px; font-size: 15px; line-height: 1.4; }
+      .top-actions { position: absolute; top: 0; right: 0; }
+      .top-actions .utility-button:first-child { display: none; }
+      .speaker-name { font-size: 27px; }
+      .timer-ring { aspect-ratio: 1.9 / 1; border-radius: 19px; }
+      .timer-time { font-size: clamp(66px, 18vw, 88px); }
+      .control-button { min-width: calc(50% - 6px); min-height: 46px; padding: 0 10px; }
+      .controls .finish { min-width: 100%; }
+      .side-column { grid-template-columns: 1fr; }
+      .history-row { grid-template-columns: minmax(90px, 1fr) auto auto; }
+      .history-date { display: none; }
+      .result-tag { font-size: 10px; }
+      .projector-mode .timer-time { font-size: clamp(82px, 19vw, 128px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo-frame">
+          <img src="assets/school-logo.jpg" alt="Official school logo">
+        </div>
+        <div class="brand-copy">
+          <p class="brand-kicker">The official speaking platform</p>
+          <h1>INTER SCHOOL SPEECH COMPETITION</h1>
+          <p class="school-nameplate">Quetta Residential School &amp; College</p>
+          <p class="brand-quote">“Your voice has the power to inspire, influence, and create change.”</p>
+        </div>
+      </div>
+      <nav class="top-actions" aria-label="Display options">
+        <button class="utility-button" id="projectorButton" type="button" title="Toggle projector mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+          <span class="button-label">Projector</span>
+        </button>
+        <button class="icon-button" id="fullscreenButton" type="button" aria-label="Enter fullscreen" title="Fullscreen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg>
+        </button>
+        <button class="icon-button" id="helpButton" type="button" aria-label="Keyboard shortcuts help" title="Keyboard shortcuts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.7 1.2c-.8 1.2-2.3 1.4-2.3 3m0 3h.01"/></svg>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <div class="main-grid">
+        <section class="timer-card" id="timerCard" aria-label="Speech timer">
+          <div class="timer-topline">
+            <p class="eyebrow">Competition timer</p>
+            <span class="status-chip" id="statusChip" data-state="ready" aria-live="polite">READY</span>
+          </div>
+
+          <div class="speaker-display" aria-live="polite">
+            <p class="speaker-label">Now at the podium</p>
+            <h2 class="speaker-name" id="displaySpeaker">Next speaker</h2>
+            <p class="school-display" id="displaySchool">Speaker and school appear here</p>
+          </div>
+
+          <div class="timer-wrap">
+            <div class="timer-ring">
+              <p class="timer-time" id="timerDisplay" role="timer" aria-label="3 minutes 0 seconds"><span id="minutes">03</span><span class="colon">:</span><span id="seconds">00</span></p>
+            </div>
+            <div class="countdown-overlay" id="countdownOverlay" aria-hidden="true"><span class="countdown-number" id="countdownNumber"></span></div>
+          </div>
+          <p class="limit-caption">TIME ALLOWED <strong id="limitDisplay">03:00</strong></p>
+          <div class="progress-track" role="progressbar" aria-label="Speech time elapsed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
+          <p class="state-message" id="stateMessage" aria-live="assertive">READY WHEN YOU ARE</p>
+
+          <div class="controls" aria-label="Timer controls">
+            <button class="control-button primary" id="startButton" type="button">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+              <span>Start</span>
+            </button>
+            <button class="control-button" id="pauseButton" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>
+              <span>Pause</span>
+            </button>
+            <button class="control-button finish" id="finishButton" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 7h10v10H7z"/></svg>
+              <span>Finish speech</span>
+            </button>
+            <button class="control-button" id="resetButton" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2.3 5.7M4 5v6h6"/></svg>
+              <span>Reset</span>
+            </button>
+          </div>
+          <p class="hotkey-hint"><kbd>Space</kbd> start / pause <span aria-hidden="true">·</span> <kbd>Enter</kbd> start</p>
+        </section>
+
+        <aside class="side-column" aria-label="Competition settings">
+          <section class="side-card">
+            <div class="card-heading"><h2>Speaker details</h2><span class="step">01 / SETUP</span></div>
+            <div class="field">
+              <label for="speakerInput">Speaker name</label>
+              <input id="speakerInput" name="speaker" type="text" maxlength="70" autocomplete="off" placeholder="Enter speaker name">
+            </div>
+            <div class="field">
+              <label for="schoolInput">School name</label>
+              <input id="schoolInput" name="school" type="text" maxlength="90" autocomplete="organization" placeholder="Enter school name">
+            </div>
+            <div class="side-divider"></div>
+            <div class="card-heading"><h2>Speech time limit</h2><span class="step">02 / SET</span></div>
+            <div class="limit-fields">
+              <div class="field">
+                <label for="limitMinutes">Minutes</label>
+                <input id="limitMinutes" type="number" min="0" max="180" step="1" value="3" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="limitSeconds">Seconds</label>
+                <input id="limitSeconds" type="number" min="0" max="59" step="1" value="0" inputmode="numeric">
+              </div>
+            </div>
+            <p class="field-help" id="limitHelp">Choose 1 second to 3 hours. Default is 3 minutes.</p>
+          </section>
+
+          <section class="side-card">
+            <div class="card-heading"><h2>Presentation</h2><span class="step">03 / DISPLAY</span></div>
+            <div class="setting-row">
+              <div class="setting-copy"><strong>Sound cues</strong><span>Start chime and time-up alert</span></div>
+              <label class="switch">
+                <input id="soundToggle" type="checkbox" checked aria-label="Sound cues on">
+                <span class="switch-track"></span>
+              </label>
+            </div>
+            <div class="side-divider"></div>
+            <button class="theme-button" id="themeButton" type="button" aria-label="Switch color theme">
+              <span><span class="theme-label">Color theme</span><span class="theme-current" id="themeCurrent">Professional Light</span></span>
+              <span class="theme-indicator" aria-hidden="true"></span>
+            </button>
+          </section>
+        </aside>
+      </div>
+
+      <section class="history-card" aria-label="Completed speeches">
+        <div class="card-heading">
+          <div class="history-title-group"><h2>Recent speeches</h2><span class="history-count" id="historyCount">0</span></div>
+          <button class="text-button" id="clearHistoryButton" type="button" disabled>Clear history</button>
+        </div>
+        <div class="history-empty" id="historyEmpty">Completed speeches will appear here.</div>
+        <div class="history-list" id="historyList" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="helpDialog" aria-labelledby="helpTitle">
+    <h2 id="helpTitle">Quick controls</h2>
+    <p>Keep your focus on the speaker. These shortcuts work whenever you are not typing in a field.</p>
+    <div class="shortcut-list">
+      <span>Start or pause the timer</span><kbd>Space</kbd>
+      <span>Start / resume</span><kbd>Enter</kbd>
+      <span>Reset the current speech</span><kbd>R</kbd>
+      <span>Toggle fullscreen</span><kbd>F</kbd>
+      <span>Toggle projector mode</span><kbd>P</kbd>
+      <span>Show or hide this guide</span><kbd>?</kbd>
+    </div>
+    <p>Resetting discards the current run. Use <strong>Finish speech</strong> to save an early finish to history.</p>
+    <div class="dialog-actions"><button class="control-button primary" id="closeHelpButton" type="button">Got it</button></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
+      const elements = {
+        card: $("timerCard"),
+        timerDisplay: $("timerDisplay"),
+        minutes: $("minutes"),
+        seconds: $("seconds"),
+        limitDisplay: $("limitDisplay"),
+        speakerInput: $("speakerInput"),
+        schoolInput: $("schoolInput"),
+        displaySpeaker: $("displaySpeaker"),
+        displaySchool: $("displaySchool"),
+        status: $("statusChip"),
+        stateMessage: $("stateMessage"),
+        start: $("startButton"),
+        pause: $("pauseButton"),
+        finish: $("finishButton"),
+        reset: $("resetButton"),
+        progress: $("progressFill"),
+        progressTrack: $("progressTrack"),
+        countdownOverlay: $("countdownOverlay"),
+        countdownNumber: $("countdownNumber"),
+        minutesInput: $("limitMinutes"),
+        secondsInput: $("limitSeconds"),
+        helpDialog: $("helpDialog"),
+        toast: $("toast"),
+        historyList: $("historyList"),
+        historyEmpty: $("historyEmpty"),
+        historyCount: $("historyCount"),
+        clearHistory: $("clearHistoryButton"),
+        themeCurrent: $("themeCurrent"),
+        soundToggle: $("soundToggle")
+      };
+      const STORAGE = { theme: "speech-stopwatch-theme", history: "speech-stopwatch-history" };
+      const MAX_LIMIT_SECONDS = 180 * 60;
+      let state = "ready";
+      let limitSeconds = 180;
+      let elapsedBeforeRun = 0;
+      let runStartedAt = 0;
+      let countdownTimer = 0;
+      let intervalId = 0;
+      let toastTimer = 0;
+      let audioContext = null;
+      let history = readHistory();
+
+      function safeStorageSet(key, value, label) {
+        try {
+          localStorage.setItem(key, value);
+          return true;
+        } catch (error) {
+          console.error(`Unable to save ${label} in this browser.`, error);
+          showToast(`Could not save ${label}. Browser storage may be full or unavailable.`, true);
+          return false;
+        }
+      }
+
+      function readHistory() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
+          if (!Array.isArray(stored)) throw new TypeError("Saved history is not a list.");
+          return stored.filter((item) => item && typeof item.speaker === "string" && typeof item.school === "string" && Number.isFinite(item.limit) && Number.isFinite(item.actual) && typeof item.withinLimit === "boolean" && typeof item.date === "string").slice(0, 100);
+        } catch (error) {
+          console.error("Unable to load saved speech history.", error);
+          showToast("Saved history could not be read. New results can still be recorded.", true);
+          return [];
+        }
+      }
+
+      function showToast(message, isError = false) {
+        elements.toast.textContent = message;
+        elements.toast.classList.toggle("error", isError);
+        elements.toast.classList.add("visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => elements.toast.classList.remove("visible"), 3800);
+      }
+
+      function formatTime(totalSeconds) {
+        const wholeSeconds = Math.max(0, Math.floor(totalSeconds));
+        const minutes = Math.floor(wholeSeconds / 60);
+        const seconds = wholeSeconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function actualElapsed() {
+        if (state === "running") return Math.min(limitSeconds, elapsedBeforeRun + (performance.now() - runStartedAt) / 1000);
+        return Math.min(limitSeconds, elapsedBeforeRun);
+      }
+
+      function renderTimer() {
+        const elapsed = actualElapsed();
+        const remaining = Math.max(0, limitSeconds - elapsed);
+        const wholeSeconds = Math.ceil(remaining - 0.00001);
+        const minutes = Math.floor(wholeSeconds / 60);
+        const seconds = wholeSeconds % 60;
+        elements.minutes.textContent = String(minutes).padStart(2, "0");
+        elements.seconds.textContent = String(seconds).padStart(2, "0");
+        elements.timerDisplay.setAttribute("aria-label", `${minutes} minutes ${seconds} seconds remaining`);
+        const percent = Math.min(100, (elapsed / limitSeconds) * 100);
+        elements.progress.style.width = `${percent}%`;
+        elements.progressTrack.setAttribute("aria-valuenow", String(Math.floor(percent)));
+      }
+
+      function renderState() {
+        const labels = {
+          ready: ["READY", "READY WHEN YOU ARE"],
+          countdown: ["GET READY", "GET READY"],
+          running: ["SPEECH STARTED", "SPEECH STARTED"],
+          paused: ["PAUSED", "SPEECH PAUSED"],
+          finished: ["TIME UP", "TIME UP"],
+          complete: ["SPEECH COMPLETE", "SPEECH COMPLETE"]
+        };
+        const [chip, message] = labels[state];
+        elements.status.textContent = chip;
+        elements.status.dataset.state = state;
+        elements.stateMessage.textContent = message;
+        elements.card.classList.toggle("is-running", state === "running");
+        elements.card.classList.toggle("is-complete", state === "complete");
+        elements.card.classList.toggle("is-paused", state === "paused");
+        elements.card.classList.toggle("is-finished", state === "finished");
+        elements.start.disabled = state === "running" || state === "countdown";
+        elements.pause.disabled = state !== "running";
+        elements.finish.disabled = !["running", "paused"].includes(state);
+        elements.minutesInput.disabled = ["running", "paused", "countdown"].includes(state);
+        elements.secondsInput.disabled = ["running", "paused", "countdown"].includes(state);
+      }
+
+      function syncSpeaker() {
+        const name = elements.speakerInput.value.trim();
+        const school = elements.schoolInput.value.trim();
+        elements.displaySpeaker.textContent = name || "Next speaker";
+        elements.displaySchool.textContent = school || "Speaker and school appear here";
+      }
+
+      function syncLimit() {
+        const mins = Number(elements.minutesInput.value);
+        const secs = Number(elements.secondsInput.value);
+        if (!Number.isInteger(mins) || !Number.isInteger(secs) || mins < 0 || mins > 180 || secs < 0 || secs > 59) {
+          elements.minutesInput.setAttribute("aria-invalid", "true");
+          elements.secondsInput.setAttribute("aria-invalid", "true");
+          showToast("Enter whole minutes (0–180) and seconds (0–59).", true);
+          return false;
+        }
+        const value = mins * 60 + secs;
+        if (value < 1 || value > MAX_LIMIT_SECONDS) {
+          elements.minutesInput.setAttribute("aria-invalid", "true");
+          elements.secondsInput.setAttribute("aria-invalid", "true");
+          showToast("Speech time must be between 1 second and 3 hours.", true);
+          return false;
+        }
+        elements.minutesInput.removeAttribute("aria-invalid");
+        elements.secondsInput.removeAttribute("aria-invalid");
+        limitSeconds = value;
+        elapsedBeforeRun = 0;
+        elements.limitDisplay.textContent = formatTime(limitSeconds);
+        renderTimer();
+        return true;
+      }
+
+      function playCue(kind) {
+        if (!elements.soundToggle.checked) return;
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) throw new Error("Web Audio is not supported in this browser.");
+          if (!audioContext) audioContext = new AudioContextClass();
+          if (audioContext.state === "suspended") audioContext.resume();
+          const now = audioContext.currentTime;
+          const notes = kind === "start"
+            ? [{ f: 523.25, t: 0, d: .28 }, { f: 659.25, t: .1, d: .3 }, { f: 783.99, t: .2, d: .42 }]
+            : [{ f: 783.99, t: 0, d: .28 }, { f: 659.25, t: .23, d: .28 }, { f: 523.25, t: .46, d: .48 }];
+          for (const note of notes) {
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(note.f, now + note.t);
+            gain.gain.setValueAtTime(.0001, now + note.t);
+            gain.gain.exponentialRampToValueAtTime(.24, now + note.t + .025);
+            gain.gain.setTargetAtTime(.15, now + note.t + .06, .09);
+            gain.gain.exponentialRampToValueAtTime(.0001, now + note.t + note.d);
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start(now + note.t);
+            oscillator.stop(now + note.t + note.d + .02);
+          }
+        } catch (error) {
+          console.error("Unable to play the competition sound cue.", error);
+          showToast("Sound cue could not play. Check your browser audio settings.", true);
+        }
+      }
+
+      function clearTimers() {
+        window.clearInterval(intervalId);
+        window.clearTimeout(countdownTimer);
+        intervalId = 0;
+        countdownTimer = 0;
+      }
+
+      function beginRun() {
+        state = "running";
+        runStartedAt = performance.now();
+        renderState();
+        playCue("start");
+        renderTimer();
+        intervalId = window.setInterval(tick, 100);
+      }
+
+      function startCountdown() {
+        syncSpeaker();
+        clearTimers();
+        if (state === "ready" || state === "finished" || state === "complete") {
+          if (state === "finished" || state === "complete") {
+            elapsedBeforeRun = 0;
+            renderTimer();
+          } else if (elapsedBeforeRun === 0 && !syncLimit()) {
+            return;
+          }
+          state = "countdown";
+          renderState();
+          elements.countdownOverlay.classList.add("visible");
+          elements.countdownOverlay.setAttribute("aria-hidden", "false");
+          let count = 3;
+          const showCount = () => {
+            elements.countdownNumber.textContent = count > 0 ? String(count) : "GO";
+            elements.countdownNumber.classList.toggle("go", count === 0);
+            elements.countdownNumber.style.animation = "none";
+            void elements.countdownNumber.offsetWidth;
+            elements.countdownNumber.style.animation = "";
+            if (count === 0) {
+              countdownTimer = window.setTimeout(() => {
+                elements.countdownOverlay.classList.remove("visible");
+                elements.countdownOverlay.setAttribute("aria-hidden", "true");
+                beginRun();
+              }, 350);
+            } else {
+              count -= 1;
+              countdownTimer = window.setTimeout(showCount, 800);
+            }
+          };
+          showCount();
+        } else if (state === "paused") {
+          beginRun();
+        }
+      }
+
+      function tick() {
+        if (state !== "running") return;
+        renderTimer();
+        if (elapsedBeforeRun + (performance.now() - runStartedAt) / 1000 >= limitSeconds) {
+          elapsedBeforeRun = limitSeconds;
+          clearTimers();
+          state = "finished";
+          renderTimer();
+          renderState();
+          playCue("stop");
+          saveResult(false);
+        }
+      }
+
+      function pauseRun() {
+        if (state === "countdown") {
+          clearTimers();
+          elements.countdownOverlay.classList.remove("visible");
+          elements.countdownOverlay.setAttribute("aria-hidden", "true");
+          state = "ready";
+          renderState();
+          return;
+        }
+        if (state !== "running") return;
+        elapsedBeforeRun = Math.min(limitSeconds, elapsedBeforeRun + (performance.now() - runStartedAt) / 1000);
+        clearTimers();
+        state = "paused";
+        renderTimer();
+        renderState();
+      }
+
+      function saveResult(withinLimit) {
+        const result = {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          speaker: elements.speakerInput.value.trim() || "Unnamed speaker",
+          school: elements.schoolInput.value.trim() || "School not provided",
+          limit: limitSeconds,
+          actual: Math.min(limitSeconds, Math.floor(elapsedBeforeRun)),
+          withinLimit,
+          date: new Date().toISOString()
+        };
+        history.unshift(result);
+        history = history.slice(0, 100);
+        safeStorageSet(STORAGE.history, JSON.stringify(history), "speech history");
+        renderHistory();
+      }
+
+      function finishRun() {
+        if (!["running", "paused"].includes(state)) return;
+        if (state === "running") elapsedBeforeRun = Math.min(limitSeconds, elapsedBeforeRun + (performance.now() - runStartedAt) / 1000);
+        clearTimers();
+        state = "paused";
+        renderTimer();
+        state = "complete";
+        renderState();
+        saveResult(elapsedBeforeRun < limitSeconds);
+      }
+
+      function resetRun() {
+        clearTimers();
+        state = "ready";
+        elapsedBeforeRun = 0;
+        elements.countdownOverlay.classList.remove("visible");
+        elements.countdownOverlay.setAttribute("aria-hidden", "true");
+        elements.minutesInput.disabled = false;
+        elements.secondsInput.disabled = false;
+        renderTimer();
+        renderState();
+      }
+
+      function renderHistory() {
+        elements.historyList.replaceChildren();
+        elements.historyEmpty.hidden = history.length > 0;
+        elements.historyCount.textContent = String(history.length);
+        elements.clearHistory.disabled = history.length === 0;
+        for (const entry of history) {
+          const row = document.createElement("div");
+          row.className = "history-row";
+          const speaker = document.createElement("div");
+          const speakerName = document.createElement("p");
+          speakerName.className = "history-speaker";
+          speakerName.textContent = entry.speaker;
+          const school = document.createElement("p");
+          school.className = "history-school";
+          school.textContent = entry.school;
+          speaker.append(speakerName, school);
+          const actual = document.createElement("div");
+          actual.className = "history-value";
+          actual.append("Speaking time");
+          const actualValue = document.createElement("strong");
+          actualValue.textContent = formatTime(entry.actual);
+          actual.append(actualValue);
+          const limit = document.createElement("div");
+          limit.className = "history-value history-limit";
+          limit.append("Time allowed");
+          const limitValue = document.createElement("strong");
+          limitValue.textContent = formatTime(entry.limit);
+          limit.append(limitValue);
+          const result = document.createElement("span");
+          result.className = `result-tag${entry.withinLimit ? "" : " over"}`;
+          result.textContent = entry.withinLimit ? "Within time" : "Time up";
+          const date = document.createElement("time");
+          date.className = "history-date";
+          date.dateTime = entry.date;
+          const parsedDate = new Date(entry.date);
+          date.textContent = Number.isNaN(parsedDate.getTime()) ? "" : parsedDate.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+          row.append(speaker, actual, limit, result, date);
+          elements.historyList.append(row);
+        }
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.dataset.theme = theme;
+        elements.themeCurrent.textContent = theme === "dark" ? "Professional Dark" : "Professional Light";
+        $("themeButton").setAttribute("aria-label", `Switch to ${theme === "dark" ? "light" : "dark"} theme`);
+      }
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch((error) => {
+            console.error("Unable to enter fullscreen.", error);
+            showToast("Fullscreen is unavailable. Try your browser's fullscreen shortcut.", true);
+          });
+        } else {
+          document.exitFullscreen?.().catch((error) => {
+            console.error("Unable to exit fullscreen.", error);
+            showToast("Could not exit fullscreen.", true);
+          });
+        }
+      }
+
+      function isTypingTarget(target) {
+        return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target.tagName));
+      }
+
+      elements.start.addEventListener("click", startCountdown);
+      elements.pause.addEventListener("click", pauseRun);
+      elements.finish.addEventListener("click", finishRun);
+      elements.reset.addEventListener("click", resetRun);
+      elements.speakerInput.addEventListener("input", syncSpeaker);
+      elements.schoolInput.addEventListener("input", syncSpeaker);
+      for (const input of [elements.minutesInput, elements.secondsInput]) {
+        input.addEventListener("change", () => {
+          if (syncLimit()) renderState();
+        });
+      }
+      $("themeButton").addEventListener("click", () => {
+        const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+        applyTheme(next);
+        safeStorageSet(STORAGE.theme, next, "theme preference");
+      });
+      $("projectorButton").addEventListener("click", () => {
+        document.body.classList.toggle("projector-mode");
+        const enabled = document.body.classList.contains("projector-mode");
+        $("projectorButton").setAttribute("aria-pressed", String(enabled));
+        $("projectorButton").querySelector(".button-label").textContent = enabled ? "Exit projector" : "Projector";
+      });
+      $("fullscreenButton").addEventListener("click", toggleFullscreen);
+      $("helpButton").addEventListener("click", () => elements.helpDialog.showModal());
+      $("closeHelpButton").addEventListener("click", () => elements.helpDialog.close());
+      elements.clearHistory.addEventListener("click", () => {
+        if (!history.length || !window.confirm("Clear all saved speech history? This cannot be undone.")) return;
+        history = [];
+        safeStorageSet(STORAGE.history, "[]", "speech history");
+        renderHistory();
+      });
+      document.addEventListener("keydown", (event) => {
+        const typing = isTypingTarget(event.target);
+        if (event.code === "Space" && !typing && !elements.helpDialog.open) {
+          event.preventDefault();
+          if (["running", "countdown"].includes(state)) pauseRun();
+          else startCountdown();
+          return;
+        }
+        if (event.key === "Enter" && (event.target === elements.speakerInput || event.target === elements.schoolInput)) {
+          event.preventDefault();
+          if (!["running", "countdown"].includes(state)) startCountdown();
+          return;
+        }
+        if (typing || elements.helpDialog.open || event.altKey || event.ctrlKey || event.metaKey) return;
+        if (event.key === "Enter") {
+          if (!["running", "countdown"].includes(state)) startCountdown();
+        } else if (event.key.toLowerCase() === "r") {
+          resetRun();
+        } else if (event.key.toLowerCase() === "f") {
+          toggleFullscreen();
+        } else if (event.key.toLowerCase() === "p") {
+          $("projectorButton").click();
+        } else if (event.key === "?") {
+          elements.helpDialog.showModal();
+        }
+      });
+      document.addEventListener("fullscreenchange", () => {
+        const active = Boolean(document.fullscreenElement);
+        $("fullscreenButton").setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+        $("fullscreenButton").title = active ? "Exit fullscreen" : "Fullscreen";
+      });
+
+      try {
+        const savedTheme = localStorage.getItem(STORAGE.theme);
+        applyTheme(savedTheme === "dark" ? "dark" : "light");
+      } catch (error) {
+        console.error("Unable to restore saved presentation preferences.", error);
+        showToast("Saved preferences could not be loaded.", true);
+      }
+      renderHistory();
+      syncSpeaker();
+      renderTimer();
+      renderState();
+      window.addEventListener("pagehide", clearTimers);
+    })();
+  </script>
+</body>
+</html>
